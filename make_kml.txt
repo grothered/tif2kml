@@ -1,0 +1,20 @@
+# Script to generate a kml from a projected tif
+
+# Input variables
+my_tif='depth0_13_10_2012.tif' 
+my_tif_epsg='EPSG:3123' # EPSG projection of my_tif
+my_colortable='color_table.txt' # Color table [rows with value, r, g, b, alpha]
+my_kml_zoom_levels=10-16 # This determines the zoom of the kml -- weird notation -- larger numbers = more detail
+
+
+# Main code
+short_name=$(basename $my_tif .tif)
+
+echo 'Embedding colors (with transparency) in tif...'
+gdaldem.exe color-relief $my_tif $my_colortable $short_name\_col.tif -alpha
+
+echo 'Reprojecting to WGS84...'
+gdalwarp.exe -s_srs $my_tif_epsg -t_srs EPSG:4326 $short_name\_col.tif $short_name\_col_WGS84.tif
+
+echo 'Generating kml with transparency...'
+gdal2tiles.py -a 0 -k -z $my_kml_zoom_levels $short_name\_col_WGS84.tif $short_name\_kml
